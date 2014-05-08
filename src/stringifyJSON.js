@@ -39,46 +39,67 @@ var stringifyJSON = function (obj) {
 	if (type === 'undefined' || type === 'function') {
 		//ignore these.
 		//console.log("ignoring: " + obj);
-		return "";
+		return "ignored something";
 	} else if (type !== 'object' || obj === null) {
 		//this is a number, boolean, or string.
 		//console.log("null, number, boolean, or string");
 		// Just need to return the value.
-		return String(obj); // TODO: quotes?
+		if (type === 'string') {
+			return '"' + obj + '"';
+		} else {
+			return String(obj);
+		}
 	} else {
 		//this is an array or an object.
 		//check the value of the key. if undefined, we ignore the whole key.
 		//console.log("array or object");
 		var result = [];
+		// does keys(obj) return strings always? shit
 		Object.keys(obj).forEach(function(e) { // Iterate over each item in the array or object		
-			var etype = typeof e;
 			var val = obj[e];
+			var valtype = typeof val;
 
-			if (etype === 'object' && val !== null) {
+			if (valtype === 'object' && val !== null) {
 				//we need to recurse
 				val = JSON.stringify(val);
 			}
-
-			result.push(e + ':' + '"' + val + '"'); // TODO: don't need keyname (e) if this is an array! Also, needs brackets
+			//if we're in an array, and it's not a string:
+			// val
+			//if we're in an array, and it is a string:
+			//"val"
+			//if we're not in an array:
+			// "e" : "val"
+			var r;
+			if (Array.isArray(obj)) {
+				if (valtype === 'string') {
+					r = '"' + val + '"';
+				} else {
+					r = val;
+				}
+			} else {
+				r = '"' + e + '" : "' + val + '"';
+			}
+			result.push(r); // TODO: don't need keyname (e) if this is an array, nor quotes.
 			//if e is null, number, boolean, or string, push into result.
 		});
 		// return the result
-		return result;
+		//surround result in brackets if obj is an array or braces if object
+		var bracket = Array.isArray(obj) ? '[' + result + ']' : result;
+		return bracket;
 	}
 };
 var stringifiableObjects = [
-  // 9,
-  // null,
-  // true,
-  // false,
-  // "Hello world",
-  //above are good
-  [],
+  9, //error: shoudln't be quoted for any of these
+  null,
+  true,
+  false, 
+  "Hello world",
+  [], 
   [8],
   ["hi"],
   [8, "hi"],
   [1, 0, -1, -0.3, 0.3, 1343.32, 3345, 0.00011999999999999999],
-  [8, [[],3,4]], //issue here
+  [8, [[],3,4]],
   [[[["foo"]]]],
   {},
   {"a": "apple"},
@@ -102,6 +123,17 @@ unstringifiableValues = [
 ];
 
 stringifiableObjects.forEach(function(e){
-	console.log(stringifyJSON(e));
+	var mine = String(stringifyJSON(e));
+	var sys = JSON.stringify(e);
+	console.log("my result: ");
+	console.log(mine); // todo: shouldn't have to cast as string
+	console.log("system result: ");
+	console.log(sys);
+
+	if (mine == sys)
+		console.log("OK GOOD");
+	else {
+		console.log("UH OH!");
+	}
 });
 
