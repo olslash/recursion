@@ -35,59 +35,63 @@
 
 
 var stringifyJSON = function (obj) {
+
+	function quote(str) {
+		return '"' + str + '"';
+	}
+
 	var type = typeof obj;
 	if (type === 'undefined' || type === 'function') {
 		//ignore these.
 		//console.log("ignoring: " + obj);
-		return "ignored something";
+		return "";
 	} else if (type !== 'object' || obj === null) {
 		//this is a number, boolean, or string.
-		//console.log("null, number, boolean, or string");
 		// Just need to return the value.
-		if (type === 'string') {
-			return '"' + obj + '"';
-		} else {
-			return String(obj);
-		}
+		if (type === 'string') { return quote(obj); }
+		else { return String(obj); }
 	} else {
 		//this is an array or an object.
 		//check the value of the key. if undefined, we ignore the whole key.
-		//console.log("array or object");
 		var result = [];
-		// does keys(obj) return strings always? shit
 		Object.keys(obj).forEach(function(e) { // Iterate over each item in the array or object		
 			var val = obj[e];
 			var valtype = typeof val;
 
 			if (valtype === 'object' && val !== null) {
-				//we need to recurse
+				//we need to recurse a sub object or array
 				val = JSON.stringify(val);
 			}
-			//if we're in an array, and it's not a string:
-			// val
-			//if we're in an array, and it is a string:
-			//"val"
-			//if we're not in an array:
-			// "e" : "val"
-			var r;
+			var r; //todo: i think this can be shorter.
+
+			// need to:
+			// in arrays:
+			// quote string values but nothing else
+			// in objects 
+			// quote all keys, but only values that are strings
+			// return quote(key) : 
 			if (Array.isArray(obj)) {
 				if (valtype === 'string') {
-					r = '"' + val + '"';
+					r = quote(val);
 				} else {
+					//values other than strings in an array should not be quoted
 					r = val;
 				}
-			} else {
-				r = '"' + e + '" : "' + val + '"';
+			} else { // this is quoting booleans and nulls inside objects and arrays
+				r = quote(e) + ':' + (valtype === 'string' ? quote(val) : val);
+				//r = quote(e) + ':' + quote(val);
 			}
-			result.push(r); // TODO: don't need keyname (e) if this is an array, nor quotes.
-			//if e is null, number, boolean, or string, push into result.
+			result.push(r); 
 		});
 		// return the result
-		//surround result in brackets if obj is an array or braces if object
-		var bracket = Array.isArray(obj) ? '[' + result + ']' : result;
+		// surround result in brackets if obj is an array or braces if object
+		var bracket = Array.isArray(obj) ? '[' + result + ']' : "{" + result + "}";
 		return bracket;
 	}
 };
+
+
+
 var stringifiableObjects = [
   9, //error: shoudln't be quoted for any of these
   null,
@@ -125,15 +129,17 @@ unstringifiableValues = [
 stringifiableObjects.forEach(function(e){
 	var mine = String(stringifyJSON(e));
 	var sys = JSON.stringify(e);
+
+
+	if (mine == sys) {
+		console.log("OK GOOD");
+	}
+	else {
+	console.log("UH OH!");
 	console.log("my result: ");
 	console.log(mine); // todo: shouldn't have to cast as string
 	console.log("system result: ");
 	console.log(sys);
-
-	if (mine == sys)
-		console.log("OK GOOD");
-	else {
-		console.log("UH OH!");
 	}
 });
 
